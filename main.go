@@ -5,8 +5,9 @@ import (
 	"os"
 
 	"github.com/alexcesaro/log"
-	"github.com/alexcesaro/log/golog"
 	"github.com/jessevdk/go-flags"
+
+	ui "github.com/gizak/termui"
 )
 
 // version gets replaced during build
@@ -53,14 +54,38 @@ func main() {
 	}
 
 	logLevel := logLevels[numVerbose]
-	logger = golog.New(os.Stderr, logLevel)
+	//logger = golog.New(os.Stderr, logLevel)
+	_ = logLevel
+	logger = log.NullLogger
 
 	if len(args) < 1 {
 		fail(1, "Missing arg: PATH")
 	}
 
-	// TODO: Work here.
-	err = PlayPath(args[0])
+	if err := ui.Init(); err != nil {
+		panic(err)
+	}
+	defer ui.Close()
+
+	g := ui.NewGauge()
+	g.Width = 50
+	g.Label = "Womps"
+	ui.Render(g)
+
+	setter := func(v float64) {
+		g.Percent = int(v * 100)
+		ui.Render(g)
+	}
+	vis := BasicVisualizer(setter)
+
+	ui.Handle("/sys/kbd", func(ui.Event) {
+		// Any key to quit
+		ui.StopLoop()
+	})
+
+	go ui.Loop()
+
+	err = PlayPath(args[0], vis)
 	if err != nil {
 		fail(2, "Play error: %s", err)
 	}

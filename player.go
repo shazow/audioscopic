@@ -17,10 +17,9 @@ import (
 	_ "github.com/mjibson/mog/codec/wav"
 )
 
-const seekRate = 4096
-
-func PlayPath(p string) error {
+func PlayPath(p string, vis Visualizer) error {
 	var song codec.Song
+
 	songs, _, err := codec.ByExtension(p, fileReader(p))
 	if err != nil {
 		return err
@@ -34,18 +33,23 @@ func PlayPath(p string) error {
 		return err
 	}
 	defer song.Close()
+	seekRate := int(sampleRate / 10.0) // fps
 
 	out, err := output.Get(sampleRate, channels)
 	if err != nil {
 		return err
 	}
+	out.Start()
 
 	for {
 		samples, err := song.Play(seekRate)
 		if err != nil {
 			return err
 		}
+
 		out.Push(samples)
+		vis.Push(samples)
+		vis.Render()
 		if len(samples) < seekRate {
 			// Done
 			break

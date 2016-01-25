@@ -7,7 +7,7 @@ $(BINARY): $(SOURCES)
 	go build -ldflags "-X main.version=`git describe --long --tags --dirty --always`" -o "$@"
 
 deps:
-	go get -v ./...
+	go get -u -v ./...
 
 build: $(BINARY)
 
