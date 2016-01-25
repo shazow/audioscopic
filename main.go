@@ -35,7 +35,7 @@ func fail(code int, format string, args ...interface{}) {
 func main() {
 	options := Options{}
 	parser := flags.NewParser(&options, flags.Default)
-	_, err := parser.Parse()
+	args, err := parser.Parse()
 	if err != nil {
 		os.Exit(1)
 		return
@@ -55,7 +55,15 @@ func main() {
 	logLevel := logLevels[numVerbose]
 	logger = golog.New(os.Stderr, logLevel)
 
+	if len(args) < 1 {
+		fail(1, "Missing arg: PATH")
+	}
+
 	// TODO: Work here.
+	err = PlayPath(args[0])
+	if err != nil {
+		fail(2, "Play error: %s", err)
+	}
 
 	logger.Info("Done.")
 	os.Exit(0)
