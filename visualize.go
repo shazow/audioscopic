@@ -1,33 +1,32 @@
 package main
 
-import "math"
+import "github.com/mjibson/go-dsp/spectral"
 
 type Visualizer interface {
 	Push(samples []float32)
-	Render()
+	SetFreq(float64)
 }
 
 type basic struct {
-	value float64
-	Set   func(float64)
+	freq float64
+	Set  func([]int)
 }
 
 func (vis *basic) Push(samples []float32) {
-	// root mean square based on https://github.com/mdlayher/waveform/blob/master/samplereducefunc.go#L18
-	// TODO: FFT and stuff.
-	var sumSquare float64
-	for _, s := range samples {
-		sumSquare += math.Pow(float64(s), 2)
+	po := &spectral.PwelchOptions{
+		NFFT: 64,
 	}
-	vis.value = math.Sqrt(sumSquare / float64(len(samples)))
-	vis.Set(vis.value)
+	powers, _ := spectral.Pwelch(float32To64(samples), vis.freq, po)
+	vis.Set(float64ToInt(powers, 10))
 }
 
-func (vis *basic) Render() {
+func (vis *basic) SetFreq(freq float64) {
+	vis.freq = freq
 }
 
-func BasicVisualizer(setter func(float64)) Visualizer {
+func BasicVisualizer(setter func([]int)) Visualizer {
 	return &basic{
-		Set: setter,
+		freq: 64,
+		Set:  setter,
 	}
 }

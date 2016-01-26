@@ -67,13 +67,16 @@ func main() {
 	}
 	defer ui.Close()
 
-	g := ui.NewGauge()
-	g.Width = 50
-	g.Label = "Womps"
+	g := ui.NewBarChart()
+	g.BorderLabel = "Womps"
+	g.Width = 180
+	g.Height = 30
+	//g.SetMax(100)
 	ui.Render(g)
 
-	setter := func(v float64) {
-		g.Percent = int(v * 100)
+	setter := func(v []int) {
+		g.Data = v
+		g.DataLabels = make([]string, len(v))
 		ui.Render(g)
 	}
 	vis := BasicVisualizer(setter)

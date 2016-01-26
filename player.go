@@ -34,6 +34,7 @@ func PlayPath(p string, vis Visualizer) error {
 	}
 	defer song.Close()
 	seekRate := int(sampleRate / 10.0) // fps
+	vis.SetFreq(float64(seekRate))
 
 	out, err := output.Get(sampleRate, channels)
 	if err != nil {
@@ -49,7 +50,6 @@ func PlayPath(p string, vis Visualizer) error {
 
 		out.Push(samples)
 		vis.Push(samples)
-		vis.Render()
 		if len(samples) < seekRate {
 			// Done
 			break
