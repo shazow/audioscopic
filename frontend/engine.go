@@ -7,6 +7,7 @@ import (
 	mgl "github.com/go-gl/mathgl/mgl32"
 	"github.com/shazow/audioscopic/frontend/camera"
 	"github.com/shazow/audioscopic/frontend/control"
+	"github.com/shazow/audioscopic/frontend/loader"
 	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/size"
 	"golang.org/x/mobile/event/touch"
@@ -45,8 +46,8 @@ type engine struct {
 
 	camera   *camera.QuatCamera
 	bindings control.Bindings
-	shaders  Shaders
-	textures Textures
+	shaders  loader.Shaders
+	textures loader.Textures
 	world    World
 
 	started  time.Time
@@ -63,8 +64,8 @@ type engine struct {
 
 func (e *engine) Start(glctx gl.Context) error {
 	e.glctx = glctx
-	e.shaders = ShaderLoader(glctx)
-	e.textures = TextureLoader(glctx)
+	e.shaders = loader.ShaderLoader(glctx)
+	e.textures = loader.TextureLoader(glctx)
 
 	err := e.world.Start(e.bindings, e.shaders, e.textures)
 	if err != nil {

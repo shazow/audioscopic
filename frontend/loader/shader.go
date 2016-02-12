@@ -1,8 +1,11 @@
-package frontend
+package loader
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 
+	"golang.org/x/mobile/asset"
 	"golang.org/x/mobile/gl"
 )
 
@@ -129,4 +132,78 @@ func (loader *shaderLoader) Close() error {
 		shader.Close()
 	}
 	return nil
+}
+
+func loadAsset(name string) ([]byte, error) {
+	f, err := asset.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	return ioutil.ReadAll(f)
+}
+
+func loadShader(glctx gl.Context, shaderType gl.Enum, assetName string) (gl.Shader, error) {
+	// Borrowed from golang.org/x/mobile/exp/gl/glutil
+	src, err := loadAsset(assetName)
+	if err != nil {
+		return gl.Shader{}, err
+	}
+
+	shader := glctx.CreateShader(shaderType)
+	if shader.Value == 0 {
+		return gl.Shader{}, fmt.Errorf("glutil: could not create shader (type %v)", shaderType)
+	}
+	glctx.ShaderSource(shader, string(src))
+	glctx.CompileShader(shader)
+	if glctx.GetShaderi(shader, gl.COMPILE_STATUS) == 0 {
+		defer glctx.DeleteShader(shader)
+		return gl.Shader{}, fmt.Errorf("shader compile: %s", glctx.GetShaderInfoLog(shader))
+	}
+	return shader, nil
+}
+
+func LoadShaders(glctx gl.Context, program gl.Program, vertexAsset, fragmentAsset string) error {
+	vertexShader, err := loadShader(glctx, gl.VERTEX_SHADER, vertexAsset)
+	if err != nil {
+		return err
+	}
+	fragmentShader, err := loadShader(glctx, gl.FRAGMENT_SHADER, fragmentAsset)
+	if err != nil {
+		glctx.DeleteShader(vertexShader)
+		return err
+	}
+
+	if glctx.GetProgrami(program, gl.ATTACHED_SHADERS) > 0 {
+		for _, shader := range glctx.GetAttachedShaders(program) {
+			glctx.DetachShader(program, shader)
+		}
+	}
+
+	glctx.AttachShader(program, vertexShader)
+	glctx.AttachShader(program, fragmentShader)
+	glctx.LinkProgram(program)
+
+	// Flag shaders for deletion when program is unlinked.
+	glctx.DeleteShader(vertexShader)
+	glctx.DeleteShader(fragmentShader)
+
+	if glctx.GetProgrami(program, gl.LINK_STATUS) == 0 {
+		defer glctx.DeleteProgram(program)
+		return fmt.Errorf("LoadShaders: %s", glctx.GetProgramInfoLog(program))
+	}
+	return nil
+}
+
+// LoadProgram reads shader sources from the asset repository, compiles, and
+// links them into a program.
+func LoadProgram(glctx gl.Context, vertexAsset, fragmentAsset string) (program gl.Program, err error) {
+	log.Println("LoadProgram:", vertexAsset, fragmentAsset)
+
+	program = glctx.CreateProgram()
+	if program.Value == 0 {
+		return gl.Program{}, fmt.Errorf("glutil: no programs available")
+	}
+
+	err = LoadShaders(glctx, program, vertexAsset, fragmentAsset)
+	return
 }

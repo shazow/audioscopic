@@ -5,6 +5,7 @@ import (
 
 	mgl "github.com/go-gl/mathgl/mgl32"
 	"github.com/shazow/audioscopic/frontend/camera"
+	"github.com/shazow/audioscopic/frontend/loader"
 )
 
 type Light struct {
@@ -19,21 +20,21 @@ func (light *Light) MoveTo(position mgl.Vec3) {
 type Drawable interface {
 	Draw(camera.Camera)
 	Transform(*mgl.Mat4) mgl.Mat4
-	UseShader(Shader) (Shader, bool)
+	UseShader(loader.Shader) (loader.Shader, bool)
 }
 
 // TODO: node tree with transforms
 type Node struct {
 	Shape
 	transform *mgl.Mat4
-	shader    Shader
+	shader    loader.Shader
 }
 
 func (node *Node) Draw(cam camera.Camera) {
 	node.Shape.Draw(node.shader, cam)
 }
 
-func (node *Node) UseShader(parent Shader) (Shader, bool) {
+func (node *Node) UseShader(parent loader.Shader) (loader.Shader, bool) {
 	if node.shader == nil || node.shader == parent {
 		node.shader = parent
 		return parent, false
@@ -79,7 +80,7 @@ func (scene *sliceScene) Draw(cam camera.Camera) {
 	// Setup MVP
 	projection, view, position := cam.Projection(), cam.View(), cam.Position()
 
-	var parentShader Shader
+	var parentShader loader.Shader
 	for _, node := range scene.nodes {
 		shader, changed := node.UseShader(parentShader)
 		glctx := shader.Context()

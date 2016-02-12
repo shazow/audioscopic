@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"github.com/shazow/audioscopic/frontend/camera"
+	"github.com/shazow/audioscopic/frontend/loader"
 	"golang.org/x/mobile/gl"
 )
 
@@ -14,7 +15,7 @@ type Shape interface {
 	Close() error
 	Stride() int
 	Len() int
-	Draw(Shader, camera.Camera)
+	Draw(loader.Shader, camera.Camera)
 }
 
 func NewStaticShape(glctx gl.Context) *StaticShape {
@@ -74,7 +75,7 @@ func (shape *StaticShape) BytesOffset(n int) []byte {
 	return EncodeObjects(n, length, objects...)
 }
 
-func (shape *StaticShape) Draw(shader Shader, _ camera.Camera) {
+func (shape *StaticShape) Draw(shader loader.Shader, _ camera.Camera) {
 	shape.glctx.BindBuffer(gl.ARRAY_BUFFER, shape.VBO)
 	stride := shape.Stride()
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/shazow/audioscopic/frontend"
 	"github.com/shazow/audioscopic/frontend/control"
+	"github.com/shazow/audioscopic/frontend/loader"
 )
 
 func startFrontend() {
@@ -25,7 +26,7 @@ type world struct {
 	frontend.Scene
 }
 
-func (w *world) Start(bindings control.Bindings, shaders frontend.Shaders, textures frontend.Textures) error {
+func (w *world) Start(bindings control.Bindings, shaders loader.Shaders, textures loader.Textures) error {
 	// Load shaders
 	err := shaders.Load("skybox")
 	if err != nil {

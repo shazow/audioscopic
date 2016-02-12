@@ -3,6 +3,7 @@ package frontend
 import (
 	mgl "github.com/go-gl/mathgl/mgl32"
 	"github.com/shazow/audioscopic/frontend/camera"
+	"github.com/shazow/audioscopic/frontend/loader"
 	"golang.org/x/mobile/gl"
 )
 
@@ -39,7 +40,7 @@ var skyboxIndices = []uint8{
 	1, 4, 2, 2, 4, 6,
 }
 
-func NewSkybox(shader Shader, texture gl.Texture) Drawable {
+func NewSkybox(shader loader.Shader, texture gl.Texture) Drawable {
 	skyboxShape := NewStaticShape(shader.Context())
 	skyboxShape.vertices = skyboxVertices
 	skyboxShape.indices = skyboxIndices
@@ -56,14 +57,14 @@ func NewSkybox(shader Shader, texture gl.Texture) Drawable {
 
 type Skybox struct {
 	*StaticShape
-	shader Shader
+	shader loader.Shader
 }
 
 func (shape *Skybox) Transform(parent *mgl.Mat4) mgl.Mat4 {
 	return mgl.Ident4()
 }
 
-func (node *Skybox) UseShader(parent Shader) (Shader, bool) {
+func (node *Skybox) UseShader(parent loader.Shader) (loader.Shader, bool) {
 	if parent == node.shader {
 		return parent, false
 	}
@@ -154,7 +155,7 @@ func (scene *Floor) Draw(cam camera.Camera) {
 	glctx.Disable(gl.STENCIL_TEST)
 }
 
-func NewFloor(shader Shader, reflected ...Drawable) Drawable {
+func NewFloor(shader loader.Shader, reflected ...Drawable) Drawable {
 	floor := NewStaticShape(shader.Context())
 	floor.vertices = floorVertices
 	floor.normals = floorNormals

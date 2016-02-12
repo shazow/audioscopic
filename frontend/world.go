@@ -5,6 +5,7 @@ import (
 
 	mgl "github.com/go-gl/mathgl/mgl32"
 	"github.com/shazow/audioscopic/frontend/control"
+	"github.com/shazow/audioscopic/frontend/loader"
 )
 
 type Vector interface {
@@ -19,7 +20,7 @@ type World interface {
 	Tick(time.Duration) error
 	Focus() Vector
 
-	Start(control.Bindings, Shaders, Textures) error
+	Start(control.Bindings, loader.Shaders, loader.Textures) error
 }
 
 type FixedVector struct {
@@ -34,10 +35,10 @@ type stubWorld struct {
 	Scene
 }
 
-func (w stubWorld) Reset()                                                {}
-func (w stubWorld) Tick(d time.Duration) error                            { return nil }
-func (w stubWorld) Focus() Vector                                         { return FixedVector{} }
-func (w stubWorld) Start(_ control.Bindings, _ Shaders, _ Textures) error { return nil }
+func (w stubWorld) Reset()                                                              {}
+func (w stubWorld) Tick(d time.Duration) error                                          { return nil }
+func (w stubWorld) Focus() Vector                                                       { return FixedVector{} }
+func (w stubWorld) Start(_ control.Bindings, _ loader.Shaders, _ loader.Textures) error { return nil }
 
 func StubWorld(scene Scene) World {
 	return stubWorld{scene}
