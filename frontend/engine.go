@@ -14,7 +14,7 @@ import (
 	"golang.org/x/mobile/gl"
 )
 
-const mouseSensitivity = 0.01
+const mouseSensitivity = 0.005
 const moveSpeed = 0.1
 
 type Point struct {
@@ -35,9 +35,10 @@ type Engine interface {
 func NewEngine(w World) Engine {
 	cam := camera.NewQuatCamera()
 	return &engine{
-		camera:   cam,
-		bindings: control.DefaultBindings(),
-		world:    w,
+		camera:       cam,
+		bindings:     control.DefaultBindings(),
+		world:        w,
+		followOffset: mgl.Vec3{0, 7, -3},
 	}
 }
 
@@ -62,6 +63,10 @@ type engine struct {
 	followOffset mgl.Vec3
 }
 
+func (e *engine) Follow() {
+	e.following = true
+}
+
 func (e *engine) Start(glctx gl.Context) error {
 	e.glctx = glctx
 	e.shaders = loader.ShaderLoader(glctx)
@@ -72,10 +77,8 @@ func (e *engine) Start(glctx gl.Context) error {
 		return err
 	}
 
-	e.following = true
-	e.followOffset = mgl.Vec3{0, 7, -3}
 	e.camera.MoveTo(e.followOffset)
-	e.camera.RotateTo(mgl.Vec3{0, 0, 5})
+	e.camera.RotateTo(e.world.Focus().Position())
 
 	// Toggle keys
 	e.bindings.On(control.KeyPause, func(_ control.KeyBinding) {

@@ -6,6 +6,8 @@ import (
 	"github.com/shazow/audioscopic/frontend"
 	"github.com/shazow/audioscopic/frontend/control"
 	"github.com/shazow/audioscopic/frontend/loader"
+
+	mgl "github.com/go-gl/mathgl/mgl32"
 )
 
 func startFrontend() {
@@ -28,7 +30,7 @@ type world struct {
 
 func (w *world) Start(bindings control.Bindings, shaders loader.Shaders, textures loader.Textures) error {
 	// Load shaders
-	err := shaders.Load("skybox")
+	err := shaders.Load("skybox", "main")
 	if err != nil {
 		return err
 	}
@@ -40,11 +42,16 @@ func (w *world) Start(bindings control.Bindings, shaders loader.Shaders, texture
 	}
 
 	// Make skybox
-	// TODO: Add closer, or use a texture loader
-	w.Add(frontend.NewSkybox(shaders.Get("skybox"), textures.GetCube("square.png")))
+	skybox := frontend.NewSkybox(shaders.Get("skybox"), textures.GetCube("square.png"))
+	w.Add(skybox)
+
+	floor := frontend.NewFloor(shaders.Get("main"))
+	w.Add(floor)
 	return nil
 }
 
 func (w *world) Reset()                     {}
 func (w *world) Tick(d time.Duration) error { return nil }
-func (w *world) Focus() frontend.Vector     { return frontend.FixedVector{} }
+func (w *world) Focus() frontend.Vector {
+	return frontend.FixedVector(mgl.Vec3{0, 1, 1}, mgl.Vec3{0, 1, 1})
+}

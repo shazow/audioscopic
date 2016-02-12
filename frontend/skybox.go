@@ -132,7 +132,7 @@ func (scene *Floor) Draw(cam camera.Camera) {
 	glctx.Clear(gl.STENCIL_BUFFER_BIT)
 
 	// Draw floor
-	glctx.Uniform3fv(shader.Uniform("material.ambient"), []float32{0.1, 0.1, 0.1})
+	glctx.Uniform3fv(shader.Uniform("material.ambient"), []float32{0.2, 0.2, 0.35})
 	scene.Shape.Draw(shader, cam)
 
 	// Draw reflections
@@ -141,7 +141,7 @@ func (scene *Floor) Draw(cam camera.Camera) {
 	glctx.DepthMask(true)
 
 	view := cam.View()
-	glctx.Uniform3fv(shader.Uniform("material.ambient"), []float32{0.3, 0.3, 0.3})
+	glctx.Uniform3fv(shader.Uniform("material.ambient"), []float32{0.6, 0.6, 0.6})
 	for _, node := range scene.reflected {
 		model := node.Transform(scene.transform)
 		glctx.UniformMatrix4fv(shader.Uniform("model"), model[:])

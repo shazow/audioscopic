@@ -23,13 +23,20 @@ type World interface {
 	Start(control.Bindings, loader.Shaders, loader.Textures) error
 }
 
-type FixedVector struct {
+func FixedVector(position mgl.Vec3, direction mgl.Vec3) Vector {
+	return &fixedVector{
+		position:  position,
+		direction: direction,
+	}
+}
+
+type fixedVector struct {
 	position  mgl.Vec3
 	direction mgl.Vec3
 }
 
-func (v FixedVector) Position() mgl.Vec3  { return v.position }
-func (v FixedVector) Direction() mgl.Vec3 { return v.direction }
+func (v fixedVector) Position() mgl.Vec3  { return v.position }
+func (v fixedVector) Direction() mgl.Vec3 { return v.direction }
 
 type stubWorld struct {
 	Scene
@@ -37,7 +44,7 @@ type stubWorld struct {
 
 func (w stubWorld) Reset()                                                              {}
 func (w stubWorld) Tick(d time.Duration) error                                          { return nil }
-func (w stubWorld) Focus() Vector                                                       { return FixedVector{} }
+func (w stubWorld) Focus() Vector                                                       { return fixedVector{} }
 func (w stubWorld) Start(_ control.Bindings, _ loader.Shaders, _ loader.Textures) error { return nil }
 
 func StubWorld(scene Scene) World {
