@@ -1,52 +1,49 @@
 package main
 
 import (
+	"time"
+
 	"github.com/shazow/audioscopic/frontend"
-	"golang.org/x/mobile/app"
-	"golang.org/x/mobile/event/key"
-	"golang.org/x/mobile/event/lifecycle"
-	"golang.org/x/mobile/event/paint"
-	"golang.org/x/mobile/event/size"
-	"golang.org/x/mobile/event/touch"
-	"golang.org/x/mobile/gl"
+	"github.com/shazow/audioscopic/frontend/control"
 )
 
 func startFrontend() {
-	engine := frontend.NewEngine()
+	world := newWorld()
+	engine := frontend.NewEngine(world)
 
-	app.Main(func(a app.App) {
-		var glctx gl.Context
-		for e := range a.Events() {
-			switch e := a.Filter(e).(type) {
-			case lifecycle.Event:
-				switch e.Crosses(lifecycle.StageVisible) {
-				case lifecycle.CrossOn:
-					glctx, _ = e.DrawContext.(gl.Context)
-					engine.Start(glctx)
-					a.Send(paint.Event{})
-				case lifecycle.CrossOff:
-					engine.Stop()
-					glctx = nil
-				}
-			case paint.Event:
-				if glctx == nil || e.External {
-					// As we are actively painting as fast as
-					// we can (usually 60 FPS), skip any paint
-					// events sent by the system.
-					continue
-				}
-				engine.Draw()
-				a.Publish()
-				// Drive the animation by preparing to paint the next frame
-				// after this one is shown.
-				a.Send(paint.Event{})
-			case size.Event:
-				engine.Resize(e)
-			case touch.Event:
-				engine.Touch(e)
-			case key.Event:
-				engine.Press(e)
-			}
-		}
-	})
+	frontend.StartMobile(engine)
 }
+
+func newWorld() frontend.World {
+	scene := frontend.NewScene()
+	return &world{
+		Scene: scene,
+	}
+}
+
+type world struct {
+	frontend.Scene
+}
+
+func (w *world) Start(bindings control.Bindings, shaders frontend.Shaders, textures frontend.Textures) error {
+	// Load shaders
+	err := shaders.Load("skybox")
+	if err != nil {
+		return err
+	}
+
+	// Load textures
+	err = textures.Load("square.png")
+	if err != nil {
+		return err
+	}
+
+	// Make skybox
+	// TODO: Add closer, or use a texture loader
+	w.Add(frontend.NewSkybox(shaders.Get("skybox"), textures.GetCube("square.png")))
+	return nil
+}
+
+func (w *world) Reset()                     {}
+func (w *world) Tick(d time.Duration) error { return nil }
+func (w *world) Focus() frontend.Vector     { return frontend.FixedVector{} }

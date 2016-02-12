@@ -4,6 +4,7 @@ import (
 	"time"
 
 	mgl "github.com/go-gl/mathgl/mgl32"
+	"github.com/shazow/audioscopic/frontend/control"
 )
 
 type Vector interface {
@@ -11,22 +12,33 @@ type Vector interface {
 	Direction() mgl.Vec3
 }
 
-type fixedVector struct {
+type World interface {
+	Scene
+
+	Reset()
+	Tick(time.Duration) error
+	Focus() Vector
+
+	Start(control.Bindings, Shaders, Textures) error
+}
+
+type FixedVector struct {
 	position  mgl.Vec3
 	direction mgl.Vec3
 }
 
-func (v fixedVector) Position() mgl.Vec3  { return v.position }
-func (v fixedVector) Direction() mgl.Vec3 { return v.direction }
+func (v FixedVector) Position() mgl.Vec3  { return v.position }
+func (v FixedVector) Direction() mgl.Vec3 { return v.direction }
 
-type World interface {
-	Reset()
-	Tick(time.Duration) error
-	Focus() Vector
+type stubWorld struct {
+	Scene
 }
 
-type stubWorld struct{}
+func (w stubWorld) Reset()                                                {}
+func (w stubWorld) Tick(d time.Duration) error                            { return nil }
+func (w stubWorld) Focus() Vector                                         { return FixedVector{} }
+func (w stubWorld) Start(_ control.Bindings, _ Shaders, _ Textures) error { return nil }
 
-func (w *stubWorld) Reset()                     {}
-func (w *stubWorld) Tick(d time.Duration) error { return nil }
-func (w *stubWorld) Focus() Vector              { return fixedVector{} }
+func StubWorld(scene Scene) World {
+	return stubWorld{scene}
+}

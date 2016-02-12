@@ -20,8 +20,8 @@ const (
 	KeyDebug
 )
 
-func DefaultBindings() *Bindings {
-	binding := map[key.Code]KeyBinding{
+func DefaultBindings() Bindings {
+	b := map[key.Code]KeyBinding{
 		key.CodeW:          KeyCamForward,
 		key.CodeS:          KeyCamReverse,
 		key.CodeA:          KeyCamLeft,
@@ -35,20 +35,28 @@ func DefaultBindings() *Bindings {
 		key.CodeR:          KeyReload,
 		key.CodeBackslash:  KeyDebug,
 	}
-	return &Bindings{
-		bindings: binding,
+	return &bindings{
+		bindings: b,
 		on:       map[KeyBinding]func(KeyBinding){},
 		pressed:  map[KeyBinding]bool{},
 	}
 }
 
-type Bindings struct {
+type Bindings interface {
+	Lookup(code key.Code) KeyBinding
+	On(k KeyBinding, fn func(KeyBinding))
+	Press(code key.Code)
+	Pressed(k KeyBinding) bool
+	Release(code key.Code)
+}
+
+type bindings struct {
 	bindings map[key.Code]KeyBinding
 	on       map[KeyBinding]func(KeyBinding)
 	pressed  map[KeyBinding]bool
 }
 
-func (b *Bindings) Lookup(code key.Code) KeyBinding {
+func (b *bindings) Lookup(code key.Code) KeyBinding {
 	k, ok := b.bindings[code]
 	if !ok {
 		return KeyUnknown
@@ -56,11 +64,11 @@ func (b *Bindings) Lookup(code key.Code) KeyBinding {
 	return k
 }
 
-func (b *Bindings) On(k KeyBinding, fn func(KeyBinding)) {
+func (b *bindings) On(k KeyBinding, fn func(KeyBinding)) {
 	b.on[k] = fn
 }
 
-func (b *Bindings) Press(code key.Code) {
+func (b *bindings) Press(code key.Code) {
 	key := b.Lookup(code)
 	b.pressed[key] = true
 
@@ -70,12 +78,12 @@ func (b *Bindings) Press(code key.Code) {
 	}
 }
 
-func (b *Bindings) Release(code key.Code) {
+func (b *bindings) Release(code key.Code) {
 	key := b.Lookup(code)
 	b.pressed[key] = false
 }
 
-func (b *Bindings) Pressed(k KeyBinding) bool {
+func (b *bindings) Pressed(k KeyBinding) bool {
 	p, ok := b.pressed[k]
 	if ok {
 		return p

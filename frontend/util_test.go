@@ -39,10 +39,10 @@ func TestDimSlice(t *testing.T) {
 	s = NewDimSlice(2, []uint8{1, 2, 3, 4, 5, 6})
 
 	if a, b := s.Dim(), 2; a != b {
-		t.Error("got %q; want %q", a, b)
+		t.Errorf("got %q; want %q", a, b)
 	}
 	if a, b := s.Slice(1, 4), []uint8{2, 3, 4}; !reflect.DeepEqual(a, b) {
-		t.Error("got %q; want %q", a, b)
+		t.Errorf("got %q; want %q", a, b)
 	}
 }
 
@@ -113,29 +113,6 @@ func TestQuad(t *testing.T) {
 
 	q = Quad(mgl.Vec3{0, 0, 0}, mgl.Vec3{1, 0, 1})
 	fmt.Println(q)
-}
-
-func TestAppendIndexed(t *testing.T) {
-	idx := []int{}
-	verts := AppendIndexed([]float32{}, &idx, []float32{1, 1, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 1, 1, 1}...)
-	expectIdx := []int{0, 1, 0, 1, 0}
-	if !reflect.DeepEqual(idx, expectIdx) {
-		t.Errorf("got %v; want %v", idx, expectIdx)
-	}
-	expectVerts := []float32{1, 1, 1, 2, 2, 2}
-	if !reflect.DeepEqual(verts, expectVerts) {
-		t.Errorf("got %v; want %v", verts, expectVerts)
-	}
-
-	idx = []int{}
-	verts = AppendIndexed([]float32{}, &idx, unindexedCube...)
-	if !reflect.DeepEqual(verts, indexedCube) {
-		t.Errorf("got %v; want %v", verts, indexedCube)
-	}
-
-	if !reflect.DeepEqual(idx, cubeIndex) {
-		t.Errorf("got %v; want %v", idx, cubeIndex)
-	}
 }
 
 var unindexedCube = []float32{

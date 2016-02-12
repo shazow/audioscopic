@@ -46,7 +46,6 @@ func NewDimSlice(dim int, slice interface{}) DimSlicer {
 		return &dimslice_uint8{dim, slice}
 	}
 	panic(fmt.Sprintf("invalid slice type: %T", slice))
-	return nil
 }
 
 type DimSlicer interface {

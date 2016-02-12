@@ -20,12 +20,23 @@ type Point struct {
 	X, Y float32
 }
 
-func NewEngine() *engine {
+type Engine interface {
+	Draw()
+	Start(glctx gl.Context) error
+	Stop()
+
+	// Event handlers
+	Touch(t touch.Event)
+	Press(t key.Event)
+	Resize(sz size.Event)
+}
+
+func NewEngine(w World) Engine {
 	cam := camera.NewQuatCamera()
 	return &engine{
 		camera:   cam,
 		bindings: control.DefaultBindings(),
-		scene:    NewScene(),
+		world:    w,
 	}
 }
 
@@ -33,9 +44,9 @@ type engine struct {
 	glctx gl.Context
 
 	camera   *camera.QuatCamera
-	bindings *control.Bindings
-	scene    Scene
+	bindings control.Bindings
 	shaders  Shaders
+	textures Textures
 	world    World
 
 	started  time.Time
@@ -50,15 +61,20 @@ type engine struct {
 	followOffset mgl.Vec3
 }
 
-func (e *engine) Start(glctx gl.Context) {
+func (e *engine) Start(glctx gl.Context) error {
 	e.glctx = glctx
+	e.shaders = ShaderLoader(glctx)
+	e.textures = TextureLoader(glctx)
+
+	err := e.world.Start(e.bindings, e.shaders, e.textures)
+	if err != nil {
+		return err
+	}
+
 	e.following = true
 	e.followOffset = mgl.Vec3{0, 7, -3}
 	e.camera.MoveTo(e.followOffset)
 	e.camera.RotateTo(mgl.Vec3{0, 0, 5})
-
-	e.shaders = ShaderLoader(glctx)
-	e.world = &stubWorld{}
 
 	// Toggle keys
 	e.bindings.On(control.KeyPause, func(_ control.KeyBinding) {
@@ -78,7 +94,8 @@ func (e *engine) Start(glctx gl.Context) {
 	e.started = time.Now()
 	e.lastTick = e.started
 
-	log.Println("Starting: ", e.scene.String())
+	log.Println("Starting: ", e.world.String())
+	return nil
 }
 
 func (e *engine) Stop() {
@@ -159,7 +176,7 @@ func (e *engine) Draw() {
 			e.gameover = true
 		}
 	}
-	e.scene.Draw(e.camera)
+	e.world.Draw(e.camera)
 
 	e.glctx.Disable(gl.DEPTH_TEST)
 }
