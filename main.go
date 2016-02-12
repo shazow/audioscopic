@@ -6,8 +6,6 @@ import (
 
 	"github.com/alexcesaro/log"
 	"github.com/jessevdk/go-flags"
-
-	ui "github.com/gizak/termui"
 )
 
 // version gets replaced during build
@@ -62,36 +60,15 @@ func main() {
 		fail(1, "Missing arg: PATH")
 	}
 
-	if err := ui.Init(); err != nil {
-		panic(err)
-	}
-	defer ui.Close()
+	startFrontend()
 
-	g := ui.NewBarChart()
-	g.BorderLabel = "Womps"
-	g.Width = 180
-	g.Height = 30
-	//g.SetMax(100)
-	ui.Render(g)
-
-	setter := func(v []int) {
-		g.Data = v
-		g.DataLabels = make([]string, len(v))
-		ui.Render(g)
-	}
-	vis := BasicVisualizer(setter)
-
-	ui.Handle("/sys/kbd", func(ui.Event) {
-		// Any key to quit
-		ui.StopLoop()
-	})
-
-	go ui.Loop()
-
-	err = PlayPath(args[0], vis)
-	if err != nil {
-		fail(2, "Play error: %s", err)
-	}
+	/*
+		vis := BasicVisualizer()
+		err = PlayPath(args[0], vis)
+		if err != nil {
+			fail(2, "Play error: %s", err)
+		}
+	*/
 
 	logger.Info("Done.")
 	os.Exit(0)
