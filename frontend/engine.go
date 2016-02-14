@@ -11,6 +11,8 @@ import (
 	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/size"
 	"golang.org/x/mobile/event/touch"
+	"golang.org/x/mobile/exp/app/debug"
+	"golang.org/x/mobile/exp/gl/glutil"
 	"golang.org/x/mobile/gl"
 )
 
@@ -61,6 +63,10 @@ type engine struct {
 	gameover     bool
 	following    bool
 	followOffset mgl.Vec3
+
+	size   size.Event
+	images *glutil.Images
+	fps    *debug.FPS
 }
 
 func (e *engine) Follow() {
@@ -102,15 +108,23 @@ func (e *engine) Start(glctx gl.Context) error {
 	e.started = time.Now()
 	e.lastTick = e.started
 
+	e.images = glutil.NewImages(glctx)
+	e.fps = debug.NewFPS(e.images)
+
 	log.Println("Starting: ", e.world.String())
 	return nil
 }
 
 func (e *engine) Stop() {
+	e.fps.Release()
+	e.images.Release()
+
 	e.shaders.Close()
+	e.textures.Close()
 }
 
 func (e *engine) Resize(sz size.Event) {
+	e.size = sz
 	x, y := float32(sz.WidthPx), float32(sz.HeightPx)
 	e.touchLoc.X, e.touchLoc.Y = x/2, y/2
 	e.camera.SetPerspective(0.785, x/y, 0.1, 100.0)
@@ -193,4 +207,6 @@ func (e *engine) Draw() {
 	e.world.Draw(frame)
 
 	e.glctx.Disable(gl.DEPTH_TEST)
+
+	e.fps.Draw(e.size)
 }
