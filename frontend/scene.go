@@ -3,10 +3,55 @@ package frontend
 import (
 	"fmt"
 
+	"golang.org/x/mobile/gl"
+
 	mgl "github.com/go-gl/mathgl/mgl32"
 	"github.com/shazow/audioscopic/frontend/camera"
 	"github.com/shazow/audioscopic/frontend/loader"
 )
+
+type FrameContext struct {
+	GL     gl.Context
+	Camera camera.Camera
+
+	shaderCache  map[loader.Shader]struct{}
+	activeShader loader.Shader
+}
+
+func (ctx *FrameContext) bindShader(shader loader.Shader) {
+	cam, glctx := ctx.Camera, ctx.GL
+	projection, view, position := cam.Projection(), cam.View(), cam.Position()
+
+	glctx.UniformMatrix4fv(shader.Uniform("cameraPos"), position[:])
+	glctx.UniformMatrix4fv(shader.Uniform("view"), view[:])
+	glctx.UniformMatrix4fv(shader.Uniform("projection"), projection[:])
+}
+
+func (ctx *FrameContext) DrawContext(shader loader.Shader) DrawContext {
+	r := DrawContext{
+		GL:     ctx.GL,
+		Camera: ctx.Camera,
+		Shader: shader,
+	}
+	if ctx.activeShader != shader {
+		shader.Use()
+		ctx.activeShader = shader
+	}
+	if ctx.shaderCache == nil {
+		ctx.shaderCache = map[loader.Shader]struct{}{shader: struct{}{}}
+		ctx.bindShader(shader)
+	} else if _, ok := ctx.shaderCache[shader]; !ok {
+		ctx.bindShader(shader)
+	}
+	return r
+}
+
+type DrawContext struct {
+	GL        gl.Context
+	Camera    camera.Camera
+	Shader    loader.Shader
+	Transform *mgl.Mat4
+}
 
 type Light struct {
 	color    mgl.Vec3
@@ -18,9 +63,9 @@ func (light *Light) MoveTo(position mgl.Vec3) {
 }
 
 type Drawable interface {
-	Draw(camera.Camera)
+	Draw(DrawContext)
 	Transform(*mgl.Mat4) mgl.Mat4
-	UseShader(loader.Shader) (loader.Shader, bool)
+	Shader() loader.Shader
 }
 
 // TODO: node tree with transforms
@@ -30,17 +75,21 @@ type Node struct {
 	shader    loader.Shader
 }
 
-func (node *Node) Draw(cam camera.Camera) {
-	node.Shape.Draw(node.shader, cam)
+func (node *Node) Shader() loader.Shader {
+	return node.shader
 }
 
-func (node *Node) UseShader(parent loader.Shader) (loader.Shader, bool) {
-	if node.shader == nil || node.shader == parent {
-		node.shader = parent
-		return parent, false
-	}
-	node.shader.Use()
-	return node.shader, true
+func (node *Node) Draw(ctx DrawContext) {
+	view := ctx.Camera.View()
+	model := node.Transform(ctx.Transform)
+	normal := model.Mul4(view).Inv().Transpose()
+
+	// Camera space
+	ctx.GL.UniformMatrix4fv(ctx.Shader.Uniform("model"), model[:])
+	ctx.GL.UniformMatrix4fv(ctx.Shader.Uniform("normalMatrix"), normal[:])
+
+	// Bubble to shape
+	node.Shape.Draw(ctx)
 }
 
 func (node *Node) Transform(parent *mgl.Mat4) mgl.Mat4 {
@@ -52,8 +101,8 @@ func (node *Node) String() string {
 }
 
 type Scene interface {
-	Add(interface{})
-	Draw(camera.Camera)
+	Add(Drawable)
+	Draw(FrameContext)
 	String() string
 }
 
@@ -72,34 +121,14 @@ func (scene *sliceScene) String() string {
 	return fmt.Sprintf("%d nodes", len(scene.nodes))
 }
 
-func (scene *sliceScene) Add(item interface{}) {
-	scene.nodes = append(scene.nodes, item.(Drawable))
+func (scene *sliceScene) Add(item Drawable) {
+	scene.nodes = append(scene.nodes, item)
 }
 
-func (scene *sliceScene) Draw(cam camera.Camera) {
-	// Setup MVP
-	projection, view, position := cam.Projection(), cam.View(), cam.Position()
-
-	var parentShader loader.Shader
+func (scene *sliceScene) Draw(frame FrameContext) {
 	for _, node := range scene.nodes {
-		shader, changed := node.UseShader(parentShader)
-		glctx := shader.Context()
-
-		if changed {
-			// TODO: Pre-load these into relevant shaders?
-			glctx.UniformMatrix4fv(shader.Uniform("cameraPos"), position[:])
-			glctx.UniformMatrix4fv(shader.Uniform("view"), view[:])
-			glctx.UniformMatrix4fv(shader.Uniform("projection"), projection[:])
-		}
-
-		// TODO: Move these into node.Draw?
-		model := node.Transform(scene.transform)
-		normal := model.Mul4(view).Inv().Transpose()
-
-		// Camera space
-		glctx.UniformMatrix4fv(shader.Uniform("model"), model[:])
-		glctx.UniformMatrix4fv(shader.Uniform("normalMatrix"), normal[:])
-
-		node.Draw(cam)
+		ctx := frame.DrawContext(node.Shader())
+		ctx.Transform = scene.transform
+		node.Draw(ctx)
 	}
 }

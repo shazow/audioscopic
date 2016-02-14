@@ -1,11 +1,10 @@
 package main
 
 import (
+	"log"
 	"time"
 
 	"github.com/shazow/audioscopic/frontend"
-	"github.com/shazow/audioscopic/frontend/control"
-	"github.com/shazow/audioscopic/frontend/loader"
 
 	mgl "github.com/go-gl/mathgl/mgl32"
 )
@@ -26,32 +25,40 @@ func newWorld() frontend.World {
 
 type world struct {
 	frontend.Scene
+
+	particles frontend.Emitter
 }
 
-func (w *world) Start(bindings control.Bindings, shaders loader.Shaders, textures loader.Textures) error {
+func (w *world) Start(ctx frontend.WorldContext) error {
 	// Load shaders
-	err := shaders.Load("skybox", "main")
+	err := ctx.Shaders.Load("main", "skybox", "particle")
 	if err != nil {
 		return err
 	}
 
 	// Load textures
-	err = textures.Load("square.png")
+	err = ctx.Textures.Load("square.png")
 	if err != nil {
 		return err
 	}
 
 	// Make skybox
-	skybox := frontend.NewSkybox(shaders.Get("skybox"), textures.GetCube("square.png"))
+	skybox := frontend.NewSkybox(ctx.Shaders.Get("skybox"), ctx.Textures.GetCube("square.png"))
 	w.Add(skybox)
 
-	floor := frontend.NewFloor(shaders.Get("main"))
+	floor := frontend.NewFloor(ctx.Shaders.Get("main"))
 	w.Add(floor)
+
+	log.Println("scene", w)
+	//emitter := frontend.ParticleEmitter
 	return nil
 }
 
-func (w *world) Reset()                     {}
-func (w *world) Tick(d time.Duration) error { return nil }
+func (w *world) Tick(d time.Duration) error {
+	return nil
+}
+
+func (w *world) Reset() {}
 func (w *world) Focus() frontend.Vector {
-	return frontend.FixedVector(mgl.Vec3{0, 1, 1}, mgl.Vec3{0, 1, 1})
+	return frontend.FixedVector(mgl.Vec3{0, 0, 0}, mgl.Vec3{0, 0, 1})
 }

@@ -21,7 +21,9 @@ func StartMobile(engine Engine) {
 				switch e.Crosses(lifecycle.StageVisible) {
 				case lifecycle.CrossOn:
 					glctx, _ = e.DrawContext.(gl.Context)
-					engine.Start(glctx)
+					if err := engine.Start(glctx); err != nil {
+						panic(err)
+					}
 					a.Send(paint.Event{})
 				case lifecycle.CrossOff:
 					engine.Stop()

@@ -13,6 +13,12 @@ type Vector interface {
 	Direction() mgl.Vec3
 }
 
+type WorldContext struct {
+	Bindings control.Bindings
+	Shaders  loader.Shaders
+	Textures loader.Textures
+}
+
 type World interface {
 	Scene
 
@@ -20,7 +26,7 @@ type World interface {
 	Tick(time.Duration) error
 	Focus() Vector
 
-	Start(control.Bindings, loader.Shaders, loader.Textures) error
+	Start(WorldContext) error
 }
 
 func FixedVector(position mgl.Vec3, direction mgl.Vec3) Vector {
@@ -42,10 +48,10 @@ type stubWorld struct {
 	Scene
 }
 
-func (w stubWorld) Reset()                                                              {}
-func (w stubWorld) Tick(d time.Duration) error                                          { return nil }
-func (w stubWorld) Focus() Vector                                                       { return fixedVector{} }
-func (w stubWorld) Start(_ control.Bindings, _ loader.Shaders, _ loader.Textures) error { return nil }
+func (w stubWorld) Reset()                     {}
+func (w stubWorld) Tick(d time.Duration) error { return nil }
+func (w stubWorld) Focus() Vector              { return fixedVector{} }
+func (w stubWorld) Start(_ WorldContext) error { return nil }
 
 func StubWorld(scene Scene) World {
 	return stubWorld{scene}

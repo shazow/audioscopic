@@ -1,10 +1,6 @@
 package frontend
 
-import (
-	"github.com/shazow/audioscopic/frontend/camera"
-	"github.com/shazow/audioscopic/frontend/loader"
-	"golang.org/x/mobile/gl"
-)
+import "golang.org/x/mobile/gl"
 
 const vertexDim = 3
 const textureDim = 2
@@ -15,7 +11,7 @@ type Shape interface {
 	Close() error
 	Stride() int
 	Len() int
-	Draw(loader.Shader, camera.Camera)
+	Draw(DrawContext)
 }
 
 func NewStaticShape(glctx gl.Context) *StaticShape {
@@ -75,29 +71,32 @@ func (shape *StaticShape) BytesOffset(n int) []byte {
 	return EncodeObjects(n, length, objects...)
 }
 
-func (shape *StaticShape) Draw(shader loader.Shader, _ camera.Camera) {
-	shape.glctx.BindBuffer(gl.ARRAY_BUFFER, shape.VBO)
+func (shape *StaticShape) Draw(ctx DrawContext) {
+	shader := ctx.Shader
+	glctx := ctx.GL
+
+	glctx.BindBuffer(gl.ARRAY_BUFFER, shape.VBO)
 	stride := shape.Stride()
 
-	shape.glctx.EnableVertexAttribArray(shader.Attrib("vertCoord"))
-	shape.glctx.VertexAttribPointer(shader.Attrib("vertCoord"), vertexDim, gl.FLOAT, false, stride, 0)
+	glctx.EnableVertexAttribArray(shader.Attrib("vertCoord"))
+	glctx.VertexAttribPointer(shader.Attrib("vertCoord"), vertexDim, gl.FLOAT, false, stride, 0)
 
 	if len(shape.normals) > 0 {
-		shape.glctx.EnableVertexAttribArray(shader.Attrib("vertNormal"))
-		shape.glctx.VertexAttribPointer(shader.Attrib("vertNormal"), normalDim, gl.FLOAT, false, stride, vertexDim*vecSize)
+		glctx.EnableVertexAttribArray(shader.Attrib("vertNormal"))
+		glctx.VertexAttribPointer(shader.Attrib("vertNormal"), normalDim, gl.FLOAT, false, stride, vertexDim*vecSize)
 	}
 	// TODO: texture
 
 	if len(shape.indices) > 0 {
-		shape.glctx.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape.IBO)
-		shape.glctx.DrawElements(gl.TRIANGLES, len(shape.indices), gl.UNSIGNED_BYTE, 0)
+		glctx.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape.IBO)
+		glctx.DrawElements(gl.TRIANGLES, len(shape.indices), gl.UNSIGNED_BYTE, 0)
 	} else {
-		shape.glctx.DrawArrays(gl.TRIANGLES, 0, shape.Len())
+		glctx.DrawArrays(gl.TRIANGLES, 0, shape.Len())
 	}
 
-	shape.glctx.DisableVertexAttribArray(shader.Attrib("vertCoord"))
+	glctx.DisableVertexAttribArray(shader.Attrib("vertCoord"))
 	if len(shape.normals) > 0 {
-		shape.glctx.DisableVertexAttribArray(shader.Attrib("vertNormal"))
+		glctx.DisableVertexAttribArray(shader.Attrib("vertNormal"))
 	}
 	// TODO: texture
 }

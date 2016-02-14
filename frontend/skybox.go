@@ -2,7 +2,6 @@ package frontend
 
 import (
 	mgl "github.com/go-gl/mathgl/mgl32"
-	"github.com/shazow/audioscopic/frontend/camera"
 	"github.com/shazow/audioscopic/frontend/loader"
 	"golang.org/x/mobile/gl"
 )
@@ -41,44 +40,46 @@ var skyboxIndices = []uint8{
 }
 
 func NewSkybox(shader loader.Shader, texture gl.Texture) Drawable {
-	skyboxShape := NewStaticShape(shader.Context())
+	glctx := shader.Context()
+	skyboxShape := NewStaticShape(glctx)
 	skyboxShape.vertices = skyboxVertices
 	skyboxShape.indices = skyboxIndices
 	skyboxShape.Buffer()
 	skyboxShape.Texture = texture
 
 	skybox := &Skybox{
-		StaticShape: skyboxShape,
-		shader:      shader,
+		Node: Node{
+			Shape:  skyboxShape,
+			shader: shader,
+		},
 	}
 
 	return skybox
 }
 
 type Skybox struct {
-	*StaticShape
-	shader loader.Shader
+	Node
+}
+
+func (shape *Skybox) Shader() loader.Shader {
+	return shape.shader
 }
 
 func (shape *Skybox) Transform(parent *mgl.Mat4) mgl.Mat4 {
 	return mgl.Ident4()
 }
 
-func (node *Skybox) UseShader(parent loader.Shader) (loader.Shader, bool) {
-	if parent == node.shader {
-		return parent, false
-	}
-	node.shader.Use()
-	return node.shader, true
-}
+func (node *Skybox) Draw(ctx DrawContext) {
+	cam := ctx.Camera
+	shader := ctx.Shader
+	glctx := ctx.GL
 
-func (shape *Skybox) Draw(cam camera.Camera) {
-	shader := shape.shader
+	shape := node.Shape.(*StaticShape)
 
-	glctx := shader.Context()
 	glctx.DepthFunc(gl.LEQUAL)
 	glctx.DepthMask(false)
 
+	// FIXME: This overrides the scene renderer, should bypass that work somehow.
 	projection, view := cam.Projection(), cam.View().Mat3().Mat4()
 	glctx.UniformMatrix4fv(shader.Uniform("projection"), projection[:])
 	glctx.UniformMatrix4fv(shader.Uniform("view"), view[:])
@@ -120,9 +121,9 @@ type Floor struct {
 	reflected []Drawable
 }
 
-func (scene *Floor) Draw(cam camera.Camera) {
-	shader, _ := scene.UseShader(nil)
-	glctx := shader.Context()
+func (scene *Floor) Draw(ctx DrawContext) {
+	shader := ctx.Shader
+	glctx := ctx.GL
 
 	glctx.Enable(gl.STENCIL_TEST)
 	glctx.StencilFunc(gl.ALWAYS, 1, 0xFF)
@@ -133,14 +134,14 @@ func (scene *Floor) Draw(cam camera.Camera) {
 
 	// Draw floor
 	glctx.Uniform3fv(shader.Uniform("material.ambient"), []float32{0.2, 0.2, 0.35})
-	scene.Shape.Draw(shader, cam)
+	scene.Shape.Draw(ctx)
 
 	// Draw reflections
 	glctx.StencilFunc(gl.EQUAL, 1, 0xFF)
 	glctx.StencilMask(0x00)
 	glctx.DepthMask(true)
 
-	view := cam.View()
+	view := ctx.Camera.View()
 	glctx.Uniform3fv(shader.Uniform("material.ambient"), []float32{0.6, 0.6, 0.6})
 	for _, node := range scene.reflected {
 		model := node.Transform(scene.transform)
@@ -149,14 +150,15 @@ func (scene *Floor) Draw(cam camera.Camera) {
 		normal := model.Mul4(view).Inv().Transpose()
 		glctx.UniformMatrix4fv(shader.Uniform("normalMatrix"), normal[:])
 
-		node.Draw(cam)
+		node.Draw(ctx)
 	}
 
 	glctx.Disable(gl.STENCIL_TEST)
 }
 
 func NewFloor(shader loader.Shader, reflected ...Drawable) Drawable {
-	floor := NewStaticShape(shader.Context())
+	glctx := shader.Context()
+	floor := NewStaticShape(glctx)
 	floor.vertices = floorVertices
 	floor.normals = floorNormals
 	floor.Buffer()

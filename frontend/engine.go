@@ -72,7 +72,11 @@ func (e *engine) Start(glctx gl.Context) error {
 	e.shaders = loader.ShaderLoader(glctx)
 	e.textures = loader.TextureLoader(glctx)
 
-	err := e.world.Start(e.bindings, e.shaders, e.textures)
+	err := e.world.Start(WorldContext{
+		Bindings: e.bindings,
+		Shaders:  e.shaders,
+		Textures: e.textures,
+	})
 	if err != nil {
 		return err
 	}
@@ -118,6 +122,7 @@ func (e *engine) Touch(t touch.Event) {
 		e.dragging = true
 	} else if t.Type == touch.TypeEnd {
 		e.dragging = false
+		log.Println("camera=", e.camera)
 	}
 	e.touchLoc = Point{t.X, t.Y}
 	if e.dragging {
@@ -180,7 +185,12 @@ func (e *engine) Draw() {
 			e.gameover = true
 		}
 	}
-	e.world.Draw(e.camera)
+
+	frame := FrameContext{
+		GL:     e.glctx,
+		Camera: e.camera,
+	}
+	e.world.Draw(frame)
 
 	e.glctx.Disable(gl.DEPTH_TEST)
 }
