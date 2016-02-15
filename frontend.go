@@ -1,35 +1,34 @@
 package main
 
 import (
-	"log"
 	"time"
 
-	"github.com/shazow/audioscopic/frontend"
+	"github.com/shazow/go-gameblocks"
 
 	mgl "github.com/go-gl/mathgl/mgl32"
 )
 
 func startFrontend() {
 	world := newWorld()
-	engine := frontend.NewEngine(world)
+	engine := gameblocks.NewEngine(world)
 
-	frontend.StartMobile(engine)
+	gameblocks.StartMobile(engine)
 }
 
-func newWorld() frontend.World {
-	scene := frontend.NewScene()
+func newWorld() gameblocks.World {
+	scene := gameblocks.NewScene()
 	return &world{
 		Scene: scene,
 	}
 }
 
 type world struct {
-	frontend.Scene
+	gameblocks.Scene
 
-	particles frontend.Emitter
+	particles gameblocks.Emitter
 }
 
-func (w *world) Start(ctx frontend.WorldContext) error {
+func (w *world) Start(ctx gameblocks.WorldContext) error {
 	// Load shaders
 	err := ctx.Shaders.Load("main", "skybox", "particle")
 	if err != nil {
@@ -43,14 +42,12 @@ func (w *world) Start(ctx frontend.WorldContext) error {
 	}
 
 	// Make skybox
-	skybox := frontend.NewSkybox(ctx.Shaders.Get("skybox"), ctx.Textures.GetCube("square.png"))
+	skybox := gameblocks.NewSkybox(ctx.Shaders.Get("skybox"), ctx.Textures.GetCube("square.png"))
 	w.Add(skybox)
 
-	floor := frontend.NewFloor(ctx.Shaders.Get("main"))
+	floor := gameblocks.NewFloor(ctx.Shaders.Get("main"))
 	w.Add(floor)
-
-	log.Println("scene", w)
-	//emitter := frontend.ParticleEmitter
+	//emitter := gameblocks.ParticleEmitter
 	return nil
 }
 
@@ -59,6 +56,6 @@ func (w *world) Tick(d time.Duration) error {
 }
 
 func (w *world) Reset() {}
-func (w *world) Focus() frontend.Vector {
-	return frontend.FixedVector(mgl.Vec3{0, 0, 0}, mgl.Vec3{0, 0, 1})
+func (w *world) Focus() gameblocks.Vector {
+	return gameblocks.FixedVector(mgl.Vec3{0, 0, 0}, mgl.Vec3{0, 0, 1})
 }
