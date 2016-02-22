@@ -15,7 +15,7 @@ clean:
 	rm $(BINARY)
 
 run: $(BINARY)
-	./$(BINARY)
+	./$(BINARY) -vv "foo"
 
 debug: $(BINARY)
 	./$(BINARY) --pprof :6060 -vv
