@@ -3,7 +3,6 @@ package loader
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"strings"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -47,7 +46,6 @@ func (shader *shader) Attrib(name string) int32 {
 	if !ok {
 		v = gl.GetAttribLocation(shader.program, gl.Str(name+"\x00"))
 		shader.attribs[name] = v
-		log.Println(name, "->", v)
 	}
 	return v
 }
@@ -57,7 +55,6 @@ func (shader *shader) Uniform(name string) int32 {
 	if !ok {
 		v = gl.GetUniformLocation(shader.program, gl.Str(name+"\x00"))
 		shader.uniforms[name] = v
-		log.Println(name, "->", v)
 	}
 	return v
 }
@@ -167,7 +164,6 @@ func loadShader(shaderType uint32, assetName string) (uint32, error) {
 
 		return 0, fmt.Errorf("failed to compile %v: %v", src, log)
 	}
-	log.Println("+shader:", status)
 
 	return shader, nil
 }
@@ -208,7 +204,6 @@ func LoadShaders(program uint32, vertexAsset, fragmentAsset string) error {
 		gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
 		return fmt.Errorf("failed to link program: %v", log)
 	}
-	log.Println("LoadShaders:", program, "->", status)
 
 	return nil
 }
@@ -220,8 +215,6 @@ func LoadProgram(vertexAsset, fragmentAsset string) (program uint32, err error) 
 	if program == gl.FALSE {
 		return program, fmt.Errorf("gl: no programs available")
 	}
-
-	log.Println("LoadProgram:", vertexAsset, fragmentAsset, "->", program)
 
 	err = LoadShaders(program, vertexAsset, fragmentAsset)
 	return

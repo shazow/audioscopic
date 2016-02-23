@@ -52,6 +52,7 @@ func Start() {
 	}
 
 	shader := shaders.Get("main")
+	shader.Use()
 
 	projection := mgl.Perspective(mgl.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
 	gl.UniformMatrix4fv(shader.Uniform("projection"), 1, false, &projection[0])
@@ -62,15 +63,7 @@ func Start() {
 	model := mgl.Ident4()
 	gl.UniformMatrix4fv(shader.Uniform("model"), 1, false, &model[0])
 
-	gl.Uniform1i(shader.Uniform("tex"), 0)
-
 	gl.BindFragDataLocation(shader.Program(), 0, gl.Str("outputColor\x00"))
-
-	// Load the texture
-	texture, err := loader.NewTexture("square.png")
-	if err != nil {
-		panic(err)
-	}
 
 	// Configure the vertex data
 	var vao uint32
@@ -85,10 +78,6 @@ func Start() {
 	vertAttrib := uint32(shader.Attrib("vert"))
 	gl.EnableVertexAttribArray(vertAttrib)
 	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, false, 5*4, gl.PtrOffset(0))
-
-	texCoordAttrib := uint32(shader.Attrib("vertTexCoord"))
-	gl.EnableVertexAttribArray(texCoordAttrib)
-	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
 
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
@@ -114,9 +103,6 @@ func Start() {
 		gl.UniformMatrix4fv(shader.Uniform("model"), 1, false, &model[0])
 
 		gl.BindVertexArray(vao)
-
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, texture)
 
 		gl.DrawArrays(gl.TRIANGLES, 0, 6*2*3)
 
