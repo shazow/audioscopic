@@ -4,6 +4,7 @@ import (
 	"fmt"
 	_ "image/png"
 	"log"
+	"math"
 	"runtime"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -96,7 +97,8 @@ func Start() {
 		previousTime = time
 
 		angle += elapsed
-		model = mgl.HomogRotate3D(float32(angle), mgl.Vec3{0, 1, 0})
+		scale := mgl.Scale3D(float32(math.Sin(angle)), 1.0, 1.0)
+		model = mgl.HomogRotate3D(float32(angle), mgl.Vec3{0, 1, 0}).Mul4(scale)
 
 		// Render
 		shader.Use()

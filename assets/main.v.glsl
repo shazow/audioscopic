@@ -6,6 +6,12 @@ uniform mat4 model;
 
 in vec3 vert;
 
+out vec4 fragColor;
+
 void main() {
-    gl_Position = projection * camera * model * vec4(vert, 1);
+    fragColor = vec;
+
+    vec4 pos = projection * camera * model * vec4(vert, 1);
+
+    gl_Position = pos;
 }
