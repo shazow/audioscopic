@@ -9,7 +9,7 @@ in vec3 vert;
 out vec4 fragColor;
 
 void main() {
-    fragColor = vec;
+    fragColor = vec4(0, 0.3, 0.9, 1.0);
 
     vec4 pos = projection * camera * model * vec4(vert, 1);
 

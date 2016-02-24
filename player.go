@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"os"
 
@@ -68,6 +69,9 @@ func SongPlayer(path string) (*player, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(songs) == 0 {
+		return nil, fmt.Errorf("no songs detected")
+	}
 	for _, song = range songs {
 		// Get first song
 		break
@@ -76,7 +80,6 @@ func SongPlayer(path string) (*player, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer song.Close()
 
 	out, err := output.Get(sampleRate, channels)
 	if err != nil {

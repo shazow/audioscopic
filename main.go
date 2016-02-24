@@ -71,14 +71,6 @@ func main() {
 	frontend.Start()
 	p.Stop()
 
-	/*
-		vis := BasicVisualizer()
-		err = PlayPath(args[0], vis)
-		if err != nil {
-			fail(2, "Play error: %s", err)
-		}
-	*/
-
 	logger.Info("Done.")
 	os.Exit(0)
 }
