@@ -61,7 +61,15 @@ func main() {
 		fail(1, "Missing arg: PATH")
 	}
 
+	p, err := SongPlayer(args[0])
+	if err != nil {
+		fail(2, err.Error())
+	}
+	defer p.Close()
+	go p.Start()
+
 	frontend.Start()
+	p.Stop()
 
 	/*
 		vis := BasicVisualizer()

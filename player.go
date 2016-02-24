@@ -17,12 +17,56 @@ import (
 	_ "github.com/mjibson/mog/codec/wav"
 )
 
-func PlayPath(p string, vis Visualizer) error {
+type player struct {
+	output output.Output
+	song   codec.Song
+
+	sampleRate int
+	channels   int
+
+	done chan struct{}
+}
+
+func (p *player) Start() {
+	seekRate := int(p.sampleRate / 10.0) // fps
+
+	go func() {
+		for {
+			select {
+			case <-p.done:
+				return
+			default:
+			}
+			samples, err := p.song.Play(seekRate)
+			if err != nil {
+				// TODO: Something about this err?
+				return
+			}
+
+			p.output.Push(samples)
+			if len(samples) < seekRate {
+				// Done
+				return
+			}
+		}
+	}()
+}
+
+func (p *player) Stop() {
+	p.done <- struct{}{}
+}
+
+func (p *player) Close() {
+	p.song.Close()
+	p.output.Stop()
+}
+
+func SongPlayer(path string) (*player, error) {
 	var song codec.Song
 
-	songs, _, err := codec.ByExtension(p, fileReader(p))
+	songs, _, err := codec.ByExtension(path, fileReader(path))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, song = range songs {
 		// Get first song
@@ -30,33 +74,25 @@ func PlayPath(p string, vis Visualizer) error {
 	}
 	sampleRate, channels, err := song.Init()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer song.Close()
-	seekRate := int(sampleRate / 10.0) // fps
-	vis.SetFreq(float64(seekRate))
 
 	out, err := output.Get(sampleRate, channels)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	out.Start()
 
-	for {
-		samples, err := song.Play(seekRate)
-		if err != nil {
-			return err
-		}
-
-		out.Push(samples)
-		vis.Push(samples)
-		if len(samples) < seekRate {
-			// Done
-			break
-		}
+	p := &player{
+		output:     out,
+		song:       song,
+		sampleRate: sampleRate,
+		channels:   channels,
+		done:       make(chan struct{}),
 	}
 
-	return nil
+	return p, nil
 }
 
 func fileReader(path string) codec.Reader {

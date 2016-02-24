@@ -1,0 +1,4 @@
+[submodule "vendor/github.com/mjibson/mog"]
+	path = vendor/github.com/mjibson/mog
+	url = https://github.com/mjibson/mog
+	branch = master
