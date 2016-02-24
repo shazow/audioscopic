@@ -68,7 +68,7 @@ func main() {
 	defer p.Close()
 	go p.Start()
 
-	frontend.Start()
+	frontend.Start(p)
 	p.Stop()
 
 	logger.Info("Done.")

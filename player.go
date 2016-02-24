@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 
+	"github.com/mjibson/go-dsp/spectral"
 	"github.com/mjibson/mog/codec"
 	"github.com/mjibson/mog/output"
 
@@ -26,10 +28,18 @@ type player struct {
 	channels   int
 
 	done chan struct{}
+
+	mu      sync.RWMutex
+	samples []float64
 }
 
 func (p *player) Start() {
 	seekRate := int(p.sampleRate / 10.0) // fps
+
+	po := &spectral.PwelchOptions{
+		NFFT:      8,
+		Scale_off: true,
+	}
 
 	go func() {
 		for {
@@ -43,14 +53,24 @@ func (p *player) Start() {
 				// TODO: Something about this err?
 				return
 			}
-
 			p.output.Push(samples)
+
+			p.mu.Lock()
+			p.samples, _ = spectral.Pwelch(float32To64(samples), float64(seekRate), po)
+			p.mu.Unlock()
+
 			if len(samples) < seekRate {
 				// Done
 				return
 			}
 		}
 	}()
+}
+
+func (p *player) Sample() []float64 {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.samples
 }
 
 func (p *player) Stop() {
@@ -93,6 +113,8 @@ func SongPlayer(path string) (*player, error) {
 		sampleRate: sampleRate,
 		channels:   channels,
 		done:       make(chan struct{}),
+
+		mu: sync.RWMutex{},
 	}
 
 	return p, nil

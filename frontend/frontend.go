@@ -4,7 +4,6 @@ import (
 	"fmt"
 	_ "image/png"
 	"log"
-	"math"
 	"runtime"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -21,7 +20,11 @@ func init() {
 	runtime.LockOSThread()
 }
 
-func Start() {
+type Sampler interface {
+	Sample() []float64
+}
+
+func Start(sampler Sampler) {
 	// Borrowed from https://github.com/go-gl/examples/tree/master/glfw31-gl41core-cube
 	if err := glfw.Init(); err != nil {
 		log.Fatalln("failed to initialize glfw:", err)
@@ -96,8 +99,13 @@ func Start() {
 		elapsed := time - previousTime
 		previousTime = time
 
+		samples := sampler.Sample()
+		if len(samples) < 3 {
+			samples = []float64{0.1, 0.1, 0.1}
+		}
+
 		angle += elapsed
-		scale := mgl.Scale3D(float32(math.Sin(angle)), 1.0, 1.0)
+		scale := mgl.Scale3D(float32(samples[0]), float32(samples[1]), float32(samples[2]))
 		model = mgl.HomogRotate3D(float32(angle), mgl.Vec3{0, 1, 0}).Mul4(scale)
 
 		// Render
