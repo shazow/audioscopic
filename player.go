@@ -105,7 +105,7 @@ func SongPlayer(path string) (*player, error) {
 		channels:   channels,
 		done:       make(chan struct{}),
 
-		visualizer: &visualizer{rate: seekRate},
+		visualizer: Visualizer(seekRate, channels),
 	}
 
 	return p, nil

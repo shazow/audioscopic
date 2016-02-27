@@ -2,30 +2,46 @@ package main
 
 import "github.com/mjibson/go-dsp/spectral"
 
+func Visualizer(rate int, channels int) *visualizer {
+	return &visualizer{
+		channels: channels,
+		rate:     rate,
+	}
+}
+
 type visualizer struct {
-	rate int
-	prev []float64
+	channels int
+	rate     int
+	prev     []float64
 }
 
 func (vis *visualizer) Push(samples []float32) {
 	po := &spectral.PwelchOptions{
-		NFFT:      16,
 		Scale_off: true,
 	}
 
-	powers, ranges := spectral.Pwelch(float32To64(samples), float64(vis.rate), po)
+	samplesPerChan := int(len(samples) / vis.channels)
+	channels := make([][]float64, 0, vis.channels)
 
-	sum := 0.0
-	for i, p := range powers {
-		sum += p
-		if p <= 0.001 {
-			powers[i] = 0.001
-		}
+	for i := 0; i < vis.channels; i++ {
+		channels = append(channels, make([]float64, 0, samplesPerChan))
 	}
-	_ = ranges
-	//fmt.Printf("[%f~%f] %f = %v\n", ranges[0], ranges[len(ranges)-1], sum, powers[:8])
+	for i, s := range samples {
+		c := i % vis.channels
+		channels[c] = append(channels[c], float64(s))
+	}
 
-	vis.prev = powers
+	// TODO: Handle both channels
+	powers, _ := spectral.Pwelch(channels[0], float64(vis.rate), po)
+
+	/*
+		for i, p := range powers {
+			powers[i] = math.Pow(p, -1)
+		}*/
+
+	//fmt.Println(vis.channels, ranges)
+
+	vis.prev = powers[:(len(powers) / 2)]
 }
 
 func (vis *visualizer) Sample() []float64 {
