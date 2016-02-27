@@ -29,5 +29,6 @@ func (vis *visualizer) Push(samples []float32) {
 }
 
 func (vis *visualizer) Sample() []float64 {
+	// TODO: Adjust for human frequency sensitivity (http://www.lafavre.us/sound-loudness.jpg)
 	return vis.prev
 }

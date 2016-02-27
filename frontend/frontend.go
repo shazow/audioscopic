@@ -61,8 +61,8 @@ func Start(sampler Sampler) {
 	projection := mgl.Perspective(mgl.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
 	gl.UniformMatrix4fv(shader.Uniform("projection"), 1, false, &projection[0])
 
-	camera := mgl.LookAtV(mgl.Vec3{3, 3, 3}, mgl.Vec3{0, 0, 0}, mgl.Vec3{0, 1, 0})
-	gl.UniformMatrix4fv(shader.Uniform("camera"), 1, false, &camera[0])
+	view := mgl.LookAtV(mgl.Vec3{5, 3, 0}, mgl.Vec3{0, 0, 0}, mgl.Vec3{0, 1, 0})
+	gl.UniformMatrix4fv(shader.Uniform("view"), 1, false, &view[0])
 
 	model := mgl.Ident4()
 	gl.UniformMatrix4fv(shader.Uniform("model"), 1, false, &model[0])
@@ -88,30 +88,23 @@ func Start(sampler Sampler) {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
 
-	angle := 0.0
-	previousTime := glfw.GetTime()
-
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		// Update
-		time := glfw.GetTime()
-		elapsed := time - previousTime
-		previousTime = time
-
 		samples := sampler.Sample()
-
-		angle += elapsed
-		scale := mgl.Scale3D(float32(samples[0]), float32(samples[1]), float32(samples[2]))
-		model = mgl.HomogRotate3D(float32(angle), mgl.Vec3{0, 1, 0}).Mul4(scale)
-
-		// Render
 		shader.Use()
-		gl.UniformMatrix4fv(shader.Uniform("model"), 1, false, &model[0])
 
-		gl.BindVertexArray(vao)
+		for i, s := range samples {
+			scale := mgl.Scale3D(float32(s)*1.0, 1.0, 1.0)
+			translate := mgl.Translate3D(0.0, 0.0, float32(i*1.0))
+			model = scale.Mul4(translate)
 
-		gl.DrawArrays(gl.TRIANGLES, 0, 6*2*3)
+			// Render
+			gl.UniformMatrix4fv(shader.Uniform("model"), 1, false, &model[0])
+			gl.BindVertexArray(vao)
+			gl.DrawArrays(gl.TRIANGLES, 0, 6*2*3)
+		}
 
 		// Maintenance
 		window.SwapBuffers()
