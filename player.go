@@ -24,17 +24,22 @@ type player struct {
 	song   codec.Song
 
 	sampleRate int
+	seekRate   int
 	channels   int
 
 	done chan struct{}
 
-	mu      sync.RWMutex
-	samples []float64
+	mu sync.RWMutex
+
+	*visualizer
+}
+
+func (p *player) Push(samples []float32) {
+	p.output.Push(samples)
+	p.visualizer.Push(samples)
 }
 
 func (p *player) Start() {
-	seekRate := int(p.sampleRate / 10.0) // fps
-
 	go func() {
 		for {
 			select {
@@ -42,29 +47,19 @@ func (p *player) Start() {
 				return
 			default:
 			}
-			samples, err := p.song.Play(seekRate)
+			samples, err := p.song.Play(p.seekRate)
 			if err != nil {
 				// TODO: Something about this err?
 				return
 			}
-			p.output.Push(samples)
+			p.Push(samples)
 
-			p.mu.Lock()
-			p.samples = Analyze(samples, seekRate)
-			p.mu.Unlock()
-
-			if len(samples) < seekRate {
+			if len(samples) < p.seekRate {
 				// Done
 				return
 			}
 		}
 	}()
-}
-
-func (p *player) Sample() []float64 {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	return p.samples
 }
 
 func (p *player) Stop() {
@@ -101,15 +96,16 @@ func SongPlayer(path string) (*player, error) {
 	}
 	out.Start()
 
+	seekRate := int(sampleRate / 10.0) // fps
 	p := &player{
 		output:     out,
 		song:       song,
 		sampleRate: sampleRate,
+		seekRate:   seekRate,
 		channels:   channels,
 		done:       make(chan struct{}),
-		samples:    []float64{0, 0, 0},
 
-		mu: sync.RWMutex{},
+		visualizer: &visualizer{rate: seekRate},
 	}
 
 	return p, nil

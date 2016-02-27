@@ -2,13 +2,18 @@ package main
 
 import "github.com/mjibson/go-dsp/spectral"
 
-func Analyze(samples []float32, rate int) []float64 {
+type visualizer struct {
+	rate int
+	prev []float64
+}
+
+func (vis *visualizer) Push(samples []float32) {
 	po := &spectral.PwelchOptions{
 		NFFT:      16,
 		Scale_off: true,
 	}
 
-	powers, ranges := spectral.Pwelch(float32To64(samples), float64(rate), po)
+	powers, ranges := spectral.Pwelch(float32To64(samples), float64(vis.rate), po)
 
 	sum := 0.0
 	for i, p := range powers {
@@ -20,5 +25,9 @@ func Analyze(samples []float32, rate int) []float64 {
 	_ = ranges
 	//fmt.Printf("[%f~%f] %f = %v\n", ranges[0], ranges[len(ranges)-1], sum, powers[:8])
 
-	return powers[:3]
+	vis.prev = powers[:3]
+}
+
+func (vis *visualizer) Sample() []float64 {
+	return vis.prev
 }
