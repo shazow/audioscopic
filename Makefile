@@ -15,7 +15,7 @@ clean:
 	rm $(BINARY)
 
 run: $(BINARY)
-	./$(BINARY) -vv "sample.ogg"
+	./$(BINARY) -vv "tones.ogg"
 
 debug: $(BINARY)
 	./$(BINARY) --pprof :6060 -vv

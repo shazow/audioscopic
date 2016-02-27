@@ -100,9 +100,6 @@ func Start(sampler Sampler) {
 		previousTime = time
 
 		samples := sampler.Sample()
-		if len(samples) < 3 {
-			samples = []float64{0.1, 0.1, 0.1}
-		}
 
 		angle += elapsed
 		scale := mgl.Scale3D(float32(samples[0]), float32(samples[1]), float32(samples[2]))
