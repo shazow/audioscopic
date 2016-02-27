@@ -25,7 +25,7 @@ func (vis *visualizer) Push(samples []float32) {
 	_ = ranges
 	//fmt.Printf("[%f~%f] %f = %v\n", ranges[0], ranges[len(ranges)-1], sum, powers[:8])
 
-	vis.prev = powers[:3]
+	vis.prev = powers
 }
 
 func (vis *visualizer) Sample() []float64 {

@@ -58,10 +58,10 @@ func Start(sampler Sampler) {
 	shader := shaders.Get("main")
 	shader.Use()
 
-	projection := mgl.Perspective(mgl.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
+	projection := mgl.Perspective(mgl.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 100.0)
 	gl.UniformMatrix4fv(shader.Uniform("projection"), 1, false, &projection[0])
 
-	view := mgl.LookAtV(mgl.Vec3{5, 3, 0}, mgl.Vec3{0, 0, 0}, mgl.Vec3{0, 1, 0})
+	view := mgl.LookAtV(mgl.Vec3{1, 1, 1}, mgl.Vec3{0, 0, 0}, mgl.Vec3{0, 1, 0})
 	gl.UniformMatrix4fv(shader.Uniform("view"), 1, false, &view[0])
 
 	model := mgl.Ident4()
@@ -88,17 +88,24 @@ func Start(sampler Sampler) {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
 
+	var width float32 = 0.1
+	var margin float32 = 0.1
+
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		// Update
 		samples := sampler.Sample()
+		n := float32(len(samples))
+		mid_offset := -float32(n/2.0) * (width + margin)
 		shader.Use()
 
 		for i, s := range samples {
-			scale := mgl.Scale3D(float32(s)*1.0, 1.0, 1.0)
-			translate := mgl.Translate3D(0.0, 0.0, float32(i*1.0))
-			model = scale.Mul4(translate)
+			offset := (width+margin)*float32(i) + mid_offset
+			scale := mgl.Scale3D(width, width*float32(s), width)
+			translate := mgl.Translate3D(0.0, 0.0, offset)
+
+			model = mgl.Ident4().Mul4(translate).Mul4(scale)
 
 			// Render
 			gl.UniformMatrix4fv(shader.Uniform("model"), 1, false, &model[0])
